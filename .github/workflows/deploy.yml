@@ -10,34 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Load SSH private key into ssh-agent
       - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-      
-      - name: Add EC2 to known_hosts
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # 3️⃣ Deploy files to EC2
-      - name: Deploy to EC2
+      - name: Test SSH connection
+        run: |
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_HOST }} "echo CONNECTED"
+
+      - name: Deploy files
         run: |
           rsync -avz --delete \
             --exclude '.git' \
             --exclude '.github' \
             ./ ec2-user@${{ secrets.EC2_HOST }}:/var/www/devops-app/
-
-      # 4️⃣ Fix permissions + reload nginx
-      - name: Fix permissions and reload nginx
-        run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-            sudo chown -R nginx:nginx /var/www/devops-app
-            sudo chmod -R 755 /var/www/devops-app
-            sudo systemctl reload nginx
-          EOF
