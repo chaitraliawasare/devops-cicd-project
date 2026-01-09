@@ -21,3 +21,4 @@ This project demonstrates a beginner-friendly DevOps pipeline that automates app
 ## 🚀 Project Status
 🚧 In Progress – CI/CD pipeline implementation
 CI/CD pipeline enabled
+CI/CD pipeline enabled
