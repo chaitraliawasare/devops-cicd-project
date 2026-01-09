@@ -13,14 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy index.html to EC2
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Start SSH agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
+          ssh-private-key: |
+            ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             sudo cp index.html /var/www/devops-app/index.html
             sudo chown nginx:nginx /var/www/devops-app/index.html
             sudo chmod 644 /var/www/devops-app/index.html
             sudo systemctl reload nginx
+          EOF
+
