@@ -1,4 +1,4 @@
-name: Deploy to EC2 via SSH
+name: Deploy to EC2
 
 on:
   push:
@@ -13,16 +13,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy files to EC2
-        run: |
-          rsync -avz --delete ./ ec2-user@${{ secrets.EC2_HOST }}:/var/www/devops-app \
-            --exclude='.git' \
-            --exclude='.github'
-
+      - name: Deploy index.html to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo cp index.html /var/www/devops-app/index.html
+            sudo chown nginx:nginx /var/www/devops-app/index.html
+            sudo chmod 644 /var/www/devops-app/index.html
+            sudo systemctl reload nginx
